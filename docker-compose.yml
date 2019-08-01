@@ -1,0 +1,97 @@
+version: '3'
+
+services:
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: nginx.docker
+    volumes:
+      - ./www:/var/www/yii
+      - ./storage/docker/logs/nginx/:/var/log/nginx/
+    ports:
+      - "80"
+    depends_on:
+      - php-fpm
+      - php-fpm-cli
+    networks:
+      yii:
+        ipv4_address: ${NGINX_INTERFACE}
+
+  memcached:
+    build:
+      context: ./docker/memcached
+      dockerfile: memcached.docker
+    volumes:
+      - ./storage/docker/memcached:/var/lib/memcached
+    ports:
+      - "11211"
+    depends_on:
+      - php-fpm
+    networks:
+      - yii
+
+  redis:
+    build:
+      context: ./docker/redis
+      dockerfile: redis.docker
+    volumes:
+      - ./storage/docker/redis:/data
+    ports:
+      - "6379"
+    networks:
+      - yii
+
+  php-fpm-cli:
+    build:
+      context: ./docker/php
+      dockerfile: php-fpm-cli.docker
+    volumes:
+      - ./www:/var/www/yii
+    depends_on:
+      - mysql
+    tty: true
+    networks:
+      - yii
+
+  php-fpm:
+    build:
+      context: ./docker/php
+      dockerfile: php-fpm.docker
+    volumes:
+      - ./www:/var/www/yii
+      - ./storage/docker/logs/php/:/var/log/php/
+    depends_on:
+      - mysql
+    networks:
+      - yii
+
+  mysql:
+    build:
+      context: ./docker/mysql
+      dockerfile: mysql.docker
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "33061:3306"
+    networks:
+      - yii
+
+  mailhog:
+    image: mailhog/mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - yii
+
+networks:
+  yii:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.100.10.0/24

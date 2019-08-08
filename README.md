@@ -31,7 +31,7 @@ sudo curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 
-##После распаковки в рабочей директории
+## После распаковки в рабочей директории
 
 Скопировать `.env.example` в `.env`
 
